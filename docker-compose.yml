@@ -1,0 +1,44 @@
+version: '3'
+services:
+  elasticsearch_docker:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.13.1
+    container_name: elasticsearch_docker
+    environment:
+      - node.name=elasticsearch_docker
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=[]
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticdata:/usr/share/elasticsearch_docker/data
+    ports:
+      - 9200:9200
+    networks:
+      - elasticnetwork
+
+  kibana_docker:
+    image: docker.elastic.co/kibana/kibana:7.13.4
+    container_name: kibana_docker
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch_docker:9200
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch_docker:9200"]'
+    ports:
+      - 5601:5601
+    networks:
+      - elasticnetwork
+
+networks:
+  elasticnetwork:
+    driver: bridge
+
+volumes:
+  elasticdata:
+    driver: local
