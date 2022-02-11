@@ -1,13 +1,13 @@
 version: '3'
 services:
-  elasticsearch_docker:
+  elasticsearch_docker1:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.13.1
-    container_name: elasticsearch_docker
+    container_name: elasticsearch_docker1
     environment:
-      - node.name=elasticsearch_docker
+      - node.name=elasticsearch_docker1
       - cluster.name=es-docker-cluster
-      - discovery.seed_hosts=[]
-      - discovery.type=single-node
+      - discovery.seed_hosts=elasticsearch_docker2
+      - cluster.initial_master_nodes=elasticsearch_docker1,elasticsearch_docker2
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
@@ -18,9 +18,31 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - elasticdata:/usr/share/elasticsearch_docker/data
+      - elasticdata1:/usr/share/elasticsearch_docker/data
     ports:
       - 9200:9200
+    networks:
+      - elasticnetwork
+
+  elasticsearch_docker2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.13.1
+    container_name: elasticsearch_docker2
+    environment:
+      - node.name=elasticsearch_docker2
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=elasticsearch_docker1
+      - cluster.initial_master_nodes=elasticsearch_docker1,elasticsearch_docker2
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticdata2:/usr/share/elasticsearch_docker/data
     networks:
       - elasticnetwork
 
@@ -28,8 +50,8 @@ services:
     image: docker.elastic.co/kibana/kibana:7.13.4
     container_name: kibana_docker
     environment:
-      ELASTICSEARCH_URL: http://elasticsearch_docker:9200
-      ELASTICSEARCH_HOSTS: '["http://elasticsearch_docker:9200"]'
+      ELASTICSEARCH_URL: http://elasticsearch_docker1:9200
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch_docker1:9200"]'
     ports:
       - 5601:5601
     networks:
@@ -40,5 +62,8 @@ networks:
     driver: bridge
 
 volumes:
-  elasticdata:
+  elasticdata1:
     driver: local
+  elasticdata2:
+    driver: local
+
